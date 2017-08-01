@@ -17,7 +17,7 @@ class ViewController: UIViewController {
   
   var timer: Timer?
 
-  let player = KRLAudioPlayer()
+  let player = KRLAudioPlayer.shared
   override func viewDidLoad() {
     super.viewDidLoad()
     player.delegate = self

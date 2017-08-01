@@ -23,9 +23,9 @@ enum KRLPlayStatus {
 }
 
 class KRLAudioPlayer: NSObject {
-  // MARK: - public readonly
-  fileprivate(set) var url: URL?
   // MARK: - public property
+  static let shared = KRLAudioPlayer()
+  fileprivate(set) var url: URL?
   var status = KRLPlayStatus.unknow
   weak var delegate: KRLAudioPlayerDelegate?
   var rate: Float = 1 {
