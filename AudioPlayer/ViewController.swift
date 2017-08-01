@@ -14,8 +14,6 @@ class ViewController: UIViewController {
   @IBOutlet var totalTimeLabel: UILabel!
   @IBOutlet weak var loadProgressView: UIProgressView!
   @IBOutlet weak var playSliderView: UISlider!
-  
-  var timer: Timer?
 
   let player = KRLAudioPlayer.shared
   override func viewDidLoad() {
@@ -27,15 +25,6 @@ class ViewController: UIViewController {
   @IBAction func play(_ sender: UIButton) {
     if let url = URL(string: "http://audio.xmcdn.com/group23/M04/63/C5/wKgJNFg2qdLCziiYAGQxcTOSBEw402.m4a") {
       player.play(url)
-      timer = Timer(timeInterval: 1, repeats: true, block: { [weak self] (timer) in
-        guard let weakSelf = self else { return }
-        weakSelf.playTimeLabel.text = String(format: "%02d:%02d", Int(weakSelf.player.currentTime) / 60, Int(weakSelf.player.currentTime) % 60)
-        
-        weakSelf.totalTimeLabel.text = String(format: "%02d:%02d", Int(weakSelf.player.duration) / 60, Int(weakSelf.player.duration) % 60)
-        
-        weakSelf.playSliderView.value = Float(weakSelf.player.currentTime / weakSelf.player.duration)
-      })
-      RunLoop.current.add(timer!, forMode: RunLoopMode.commonModes)
     }
     
   }
@@ -82,6 +71,14 @@ class ViewController: UIViewController {
 
 // MARK: - KRLAudioPlayerDelegate
 extension ViewController: KRLAudioPlayerDelegate {
+  func playing(_ player: KRLAudioPlayer, currentTime: TimeInterval, duration: TimeInterval) {
+    DispatchQueue.main.async {
+      self.playTimeLabel.text = String(format: "%02d:%02d", Int(currentTime) / 60, Int(currentTime) % 60)
+      self.totalTimeLabel.text = String(format: "%02d:%02d", Int(duration) / 60, Int(duration) % 60)
+      self.playSliderView.value = Float(currentTime / duration)
+    }
+  }
+  
   func playFinish(_player: KRLAudioPlayer) {
     timer?.invalidate()
   }

@@ -10,8 +10,10 @@ import UIKit
 import AVFoundation
 
 @objc protocol KRLAudioPlayerDelegate: class {
-  @objc optional func playFinish(_player: KRLAudioPlayer)
-  @objc optional func loadProgress(_player: KRLAudioPlayer, progress: Float)
+  // 此方法异步
+  @objc optional func playing(_ player: KRLAudioPlayer, currentTime: TimeInterval, duration: TimeInterval)
+  @objc optional func loadProgress(_ player: KRLAudioPlayer, progress: Float)
+  @objc optional func playFinish(_ player: KRLAudioPlayer)
 }
 
 enum KRLPlayStatus {
@@ -30,36 +32,37 @@ class KRLAudioPlayer: NSObject {
   weak var delegate: KRLAudioPlayerDelegate?
   var rate: Float = 1 {
     didSet {
-      player?.rate = rate
+      player.rate = rate
     }
   }
   
   var isMuted: Bool = false {
     didSet {
-      player?.isMuted = isMuted
+      player.isMuted = isMuted
     }
   }
   
   var volumd: Float = 1 {
     didSet {
-      player?.volume = volumd
+      player.volume = volumd
     }
   }
   
   var currentTime: TimeInterval {
-    guard let playerItem = player?.currentItem else { return 0 }
+    guard let playerItem = player.currentItem else { return 0 }
     let time = CMTimeGetSeconds(playerItem.currentTime()).timeInterval
     return !time.isNaN ? time : 0
   }
   
   var duration: TimeInterval {
-    guard let playerItem = player?.currentItem else { return 0 }
+    guard let playerItem = player.currentItem else { return 0 }
     let time = CMTimeGetSeconds(playerItem.duration).timeInterval
     return !time.isNaN ? time : 0
   }
   
   // MARK: - private
-  fileprivate var player: AVPlayer?
+  let player = AVPlayer()
+  fileprivate var playingObserver: Any? // 播放过程中的观察者
   
   deinit {
     removeObserve()
@@ -91,28 +94,34 @@ extension KRLAudioPlayer {
     }
     
     // 移除老的kvo
-    if let _ = self.player?.currentItem {
+    if let _ = self.player.currentItem {
       removeObserve()
+      playFinish()
     }
     
     self.url = url
     let asset = AVURLAsset(url: url)
     let item = AVPlayerItem(asset: asset)
-    let player = AVPlayer(playerItem: item)
-    self.player = player
+    player.replaceCurrentItem(with: item)
     
     // 用kvo监听资源的准备状态
     addObserver()
+    
+    playingObserver = player.addPeriodicTimeObserver(forInterval: CMTimeMake(1, 1), queue: DispatchQueue.global()) { [weak self] (cmTime) in
+      guard let weakSelf = self else { return }
+      let currentTime = CMTimeGetSeconds(cmTime).timeInterval
+      weakSelf.delegate?.playing?(weakSelf, currentTime: currentTime, duration: weakSelf.duration)
+    }
   }
   
   func pause() {
     status = .pause
-    player?.pause()
+    player.pause()
   }
   
   func resume() {
     status = .playing
-    player?.play()
+    player.play()
   }
   
   func seek(_ time: TimeInterval) {
@@ -124,9 +133,8 @@ extension KRLAudioPlayer {
     guard progress == 0 ... 1 else { return }
     // 算出应该加载到的时间
     let currentTime = duration * TimeInterval(progress)
-    
     let seekTime = CMTimeMakeWithSeconds(Float64(currentTime), 1)
-    player?.currentItem?.seek(to: seekTime, completionHandler: { (bool) in
+    player.currentItem?.seek(to: seekTime, completionHandler: { (bool) in
       print(bool)
     })
   }
@@ -155,18 +163,18 @@ extension KRLAudioPlayer {
   }
   
   fileprivate func addObserver() {
-    player?.currentItem?.addObserver(self, forKeyPath: "status", options: [.new], context: nil)
-    player?.currentItem?.addObserver(self, forKeyPath: "playbackLikelyToKeepUp", options: [.new], context: nil)
-    player?.currentItem?.addObserver(self, forKeyPath: "loadedTimeRanges", options: [.new], context: nil)
-    NotificationCenter.default.addObserver(self, selector: #selector(playFinish), name: NSNotification.Name.AVPlayerItemDidPlayToEndTime, object: player?.currentItem)
+    player.currentItem?.addObserver(self, forKeyPath: "status", options: [.new], context: nil)
+    player.currentItem?.addObserver(self, forKeyPath: "playbackLikelyToKeepUp", options: [.new], context: nil)
+    player.currentItem?.addObserver(self, forKeyPath: "loadedTimeRanges", options: [.new], context: nil)
+    NotificationCenter.default.addObserver(self, selector: #selector(playFinish), name: NSNotification.Name.AVPlayerItemDidPlayToEndTime, object: player.currentItem)
   }
 
   
   fileprivate func removeObserve() {
-    player?.currentItem?.removeObserver(self, forKeyPath: "status")
-    player?.currentItem?.removeObserver(self, forKeyPath: "playbackLikelyToKeepUp")
-    player?.currentItem?.removeObserver(self, forKeyPath: "loadedTimeRanges")
-    NotificationCenter.default.removeObserver(self, name: NSNotification.Name.AVPlayerItemDidPlayToEndTime, object: player?.currentItem)
+    player.currentItem?.removeObserver(self, forKeyPath: "status")
+    player.currentItem?.removeObserver(self, forKeyPath: "playbackLikelyToKeepUp")
+    player.currentItem?.removeObserver(self, forKeyPath: "loadedTimeRanges")
+    NotificationCenter.default.removeObserver(self, name: NSNotification.Name.AVPlayerItemDidPlayToEndTime, object: player.currentItem)
   }
 }
 
@@ -174,12 +182,16 @@ extension KRLAudioPlayer {
   
   @objc fileprivate func playFinish() {
     status = .stop
-    delegate?.playFinish?(_player: self)
+    if let observer = playingObserver {
+      player.removeTimeObserver(observer)
+      playingObserver = nil
+    }
+    delegate?.playFinish?(self)
     print("播放完毕")
   }
   
   @objc fileprivate func loadProgress() {
-    guard let timeRange = player?.currentItem?.loadedTimeRanges.last?.timeRangeValue else { return }
+    guard let timeRange = player.currentItem?.loadedTimeRanges.last?.timeRangeValue else { return }
     
     /*:< 两种方式
     1:
@@ -192,7 +204,7 @@ extension KRLAudioPlayer {
     let loadCMTime = CMTimeAdd(timeRange.start, timeRange.duration)
     let loadTime = CMTimeGetSeconds(loadCMTime).timeInterval
     
-    delegate?.loadProgress?(_player: self, progress: Float(loadTime / duration))
+    delegate?.loadProgress?(self, progress: Float(loadTime / duration))
   }
 }
 
