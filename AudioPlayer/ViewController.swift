@@ -80,7 +80,7 @@ extension ViewController: KRLAudioPlayerDelegate {
   }
   
   func playFinish(_player: KRLAudioPlayer) {
-    timer?.invalidate()
+    
   }
   
   func loadProgress(_player: KRLAudioPlayer, progress: Float) {
