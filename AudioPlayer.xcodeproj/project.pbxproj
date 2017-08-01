@@ -12,6 +12,7 @@
 		CB9AAC321F2B3DDE00DB070D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = CB9AAC301F2B3DDE00DB070D /* Main.storyboard */; };
 		CB9AAC341F2B3DDE00DB070D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CB9AAC331F2B3DDE00DB070D /* Assets.xcassets */; };
 		CB9AAC371F2B3DDE00DB070D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = CB9AAC351F2B3DDE00DB070D /* LaunchScreen.storyboard */; };
+		CB9AAC3F1F2B3E3D00DB070D /* KRLAudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB9AAC3E1F2B3E3D00DB070D /* KRLAudioPlayer.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -22,6 +23,7 @@
 		CB9AAC331F2B3DDE00DB070D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		CB9AAC361F2B3DDE00DB070D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		CB9AAC381F2B3DDE00DB070D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		CB9AAC3E1F2B3E3D00DB070D /* KRLAudioPlayer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = KRLAudioPlayer.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -56,6 +58,7 @@
 			children = (
 				CB9AAC2C1F2B3DDE00DB070D /* AppDelegate.swift */,
 				CB9AAC2E1F2B3DDE00DB070D /* ViewController.swift */,
+				CB9AAC3E1F2B3E3D00DB070D /* KRLAudioPlayer.swift */,
 				CB9AAC301F2B3DDE00DB070D /* Main.storyboard */,
 				CB9AAC331F2B3DDE00DB070D /* Assets.xcassets */,
 				CB9AAC351F2B3DDE00DB070D /* LaunchScreen.storyboard */,
@@ -138,6 +141,7 @@
 			files = (
 				CB9AAC2F1F2B3DDE00DB070D /* ViewController.swift in Sources */,
 				CB9AAC2D1F2B3DDE00DB070D /* AppDelegate.swift in Sources */,
+				CB9AAC3F1F2B3E3D00DB070D /* KRLAudioPlayer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -301,6 +305,7 @@
 				CB9AAC3D1F2B3DDE00DB070D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
