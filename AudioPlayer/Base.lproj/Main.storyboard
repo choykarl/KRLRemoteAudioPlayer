@@ -26,7 +26,7 @@
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <state key="normal" title="播放"/>
                                 <connections>
-                                    <action selector="play:" destination="BYZ-38-t0r" eventType="touchUpInside" id="liN-Wg-EhB"/>
+                                    <action selector="play" destination="BYZ-38-t0r" eventType="touchUpInside" id="xuG-wq-Vwe"/>
                                 </connections>
                             </button>
                             <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="cYg-6h-FfI">
@@ -74,7 +74,9 @@
                                 <rect key="frame" x="70" y="333" width="255" height="31"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <connections>
-                                    <action selector="timeSliderAction:" destination="BYZ-38-t0r" eventType="valueChanged" id="Yvh-pI-zER"/>
+                                    <action selector="timeSliderTouchDowm:" destination="BYZ-38-t0r" eventType="touchDown" id="kQd-Ps-F3H"/>
+                                    <action selector="timeSliderTouchUpInside:" destination="BYZ-38-t0r" eventType="touchUpInside" id="PJm-Tc-gQK"/>
+                                    <action selector="timeSliderValueChange:" destination="BYZ-38-t0r" eventType="valueChanged" id="Icr-Aa-Bef"/>
                                 </connections>
                             </slider>
                             <slider opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="1" minValue="0.0" maxValue="1" translatesAutoresizingMaskIntoConstraints="NO" id="XVy-SC-fWR">
@@ -97,14 +99,14 @@
                                 <rect key="frame" x="119" y="585" width="150" height="2"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                             </progressView>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="0:00" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="rZx-Mq-5Im">
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="00:00" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="rZx-Mq-5Im">
                                 <rect key="frame" x="0.0" y="312" width="73" height="21"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="11"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="0:00" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="xwe-EN-PPx">
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="00:00" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="xwe-EN-PPx">
                                 <rect key="frame" x="309" y="312" width="66" height="21"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="11"/>
@@ -118,8 +120,8 @@
                     <simulatedToolbarMetrics key="simulatedBottomBarMetrics"/>
                     <connections>
                         <outlet property="loadProgressView" destination="rNY-0R-qz3" id="wGz-nS-Y6q"/>
-                        <outlet property="playSliderView" destination="hK7-wb-Kl1" id="0Gk-eZ-eaO"/>
                         <outlet property="playTimeLabel" destination="rZx-Mq-5Im" id="HoN-hY-JNs"/>
+                        <outlet property="timeSliderView" destination="hK7-wb-Kl1" id="2A7-rI-hmi"/>
                         <outlet property="totalTimeLabel" destination="xwe-EN-PPx" id="hIp-xP-shO"/>
                     </connections>
                 </viewController>

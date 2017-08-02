@@ -11,8 +11,9 @@ import AVFoundation
 
 @objc protocol KRLAudioPlayerDelegate: class {
   // 此方法异步
-  @objc optional func playing(_ player: KRLAudioPlayer, currentTime: TimeInterval, duration: TimeInterval)
-  @objc optional func loadProgress(_ player: KRLAudioPlayer, progress: Float)
+  @objc optional func audioPlayer(_ player: KRLAudioPlayer, currentTime: TimeInterval, duration: TimeInterval)
+  @objc optional func audioPlayer(_ player: KRLAudioPlayer, loadProgress: Float)
+  @objc optional func audioPlayer(_ player: KRLAudioPlayer, seekStatus: Bool)
   @objc optional func playFinish(_ player: KRLAudioPlayer)
 }
 
@@ -61,7 +62,7 @@ class KRLAudioPlayer: NSObject {
   }
   
   // MARK: - private
-  let player = AVPlayer()
+  fileprivate let player = AVPlayer()
   fileprivate var playingObserver: Any? // 播放过程中的观察者
   
   deinit {
@@ -110,7 +111,7 @@ extension KRLAudioPlayer {
     playingObserver = player.addPeriodicTimeObserver(forInterval: CMTimeMake(1, 1), queue: DispatchQueue.global()) { [weak self] (cmTime) in
       guard let weakSelf = self else { return }
       let currentTime = CMTimeGetSeconds(cmTime).timeInterval
-      weakSelf.delegate?.playing?(weakSelf, currentTime: currentTime, duration: weakSelf.duration)
+      weakSelf.delegate?.audioPlayer?(weakSelf, currentTime: currentTime, duration: weakSelf.duration)
     }
   }
   
@@ -130,12 +131,14 @@ extension KRLAudioPlayer {
   }
   
   func setPlayProgress(_ progress: Float) {
-    guard progress == 0 ... 1 else { return }
+    guard progress == 0 ... 1, player.status == .readyToPlay else { return }
     // 算出应该加载到的时间
     let currentTime = duration * TimeInterval(progress)
     let seekTime = CMTimeMakeWithSeconds(Float64(currentTime), 1)
-    player.currentItem?.seek(to: seekTime, completionHandler: { (bool) in
-      print(bool)
+    player.currentItem?.seek(to: seekTime, completionHandler: { [weak self] (bool) in
+      if let weakSelf = self {
+        weakSelf.delegate?.audioPlayer?(weakSelf, seekStatus: bool)
+      }
     })
   }
 }
@@ -181,11 +184,10 @@ extension KRLAudioPlayer {
 extension KRLAudioPlayer {
   
   @objc fileprivate func playFinish() {
+    guard let observer = playingObserver else {return }
     status = .stop
-    if let observer = playingObserver {
-      player.removeTimeObserver(observer)
-      playingObserver = nil
-    }
+    player.removeTimeObserver(observer)
+    playingObserver = nil
     delegate?.playFinish?(self)
     print("播放完毕")
   }
@@ -204,12 +206,8 @@ extension KRLAudioPlayer {
     let loadCMTime = CMTimeAdd(timeRange.start, timeRange.duration)
     let loadTime = CMTimeGetSeconds(loadCMTime).timeInterval
     
-    delegate?.loadProgress?(self, progress: Float(loadTime / duration))
+    delegate?.audioPlayer?(self, loadProgress: Float(loadTime / duration))
   }
-}
-
-func ==(lhs: Float, rhs: ClosedRange<Float>) -> Bool {
-  return rhs.contains(lhs)
 }
 
 extension Float64 {
@@ -217,3 +215,12 @@ extension Float64 {
     return TimeInterval(self)
   }
 }
+
+protocol RangeComparable {}
+extension RangeComparable where Self: Comparable  {
+  static func ==(lhs: Self, rhs: ClosedRange<Self>) -> Bool {
+    return rhs.contains(lhs)
+  }
+}
+
+extension Float: RangeComparable {}

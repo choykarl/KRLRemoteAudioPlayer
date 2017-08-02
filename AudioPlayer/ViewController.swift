@@ -13,7 +13,10 @@ class ViewController: UIViewController {
   @IBOutlet weak var playTimeLabel: UILabel!
   @IBOutlet var totalTimeLabel: UILabel!
   @IBOutlet weak var loadProgressView: UIProgressView!
-  @IBOutlet weak var playSliderView: UISlider!
+  @IBOutlet weak var timeSliderView: UISlider!
+  var timeSliderViewIsTouchDown = false
+  var preparePlay = false
+  var seeking = false
 
   let player = KRLAudioPlayer.shared
   override func viewDidLoad() {
@@ -22,8 +25,8 @@ class ViewController: UIViewController {
   }
   
   
-  @IBAction func play(_ sender: UIButton) {
-    if let url = URL(string: "http://audio.xmcdn.com/group23/M04/63/C5/wKgJNFg2qdLCziiYAGQxcTOSBEw402.m4a") {
+  @IBAction func play() {
+    if let url = URL(string: "http://audio.xmcdn.com/group28/M02/B6/BA/wKgJXFlLT1nzyS8YAE2G2tYI3ek072.m4a") {
       player.play(url)
     }
     
@@ -39,12 +42,17 @@ class ViewController: UIViewController {
   
   
   @IBAction func kuaitui(_ sender: UIButton) {
-    player.seek(-3)
+    seek(-3)
   }
   
   
   @IBAction func kuaijin(_ sender: UIButton) {
-    player.seek(3)
+    seek(3)
+  }
+  
+  func seek(_ time: TimeInterval) {
+    player.seek(time)
+    seeking = true
   }
   
   @IBAction func rate(_ sender: UIButton) {
@@ -59,10 +67,30 @@ class ViewController: UIViewController {
   }
   
   
-  @IBAction func timeSliderAction(_ sender: UISlider) {
-    player.setPlayProgress(sender.value)
+  @IBAction func timeSliderValueChange(_ sender: UISlider) {
+    if player.status == .unknow || player.status == .stop {
+      preparePlay = true
+      return
+    }
+    let duration = player.duration
+    let currentTime = Float(duration) * sender.value
+    playTimeLabel.text = String(format: "%02d:%02d", Int(currentTime) / 60, Int(currentTime) % 60)
+    totalTimeLabel.text = String(format: "%02d:%02d", Int(duration) / 60, Int(duration) % 60)
   }
   
+  @IBAction func timeSliderTouchDowm(_ sender: UISlider) {
+    timeSliderViewIsTouchDown = true
+  }
+  
+  @IBAction func timeSliderTouchUpInside(_ sender: UISlider) {
+    timeSliderViewIsTouchDown = false
+    if preparePlay == true {
+      play()
+      preparePlay = false
+    }
+    player.setPlayProgress(sender.value)
+    seeking = true
+  }
   
   @IBAction func volumeSliderAction(_ sender: UISlider) {
     player.volumd = sender.value
@@ -71,20 +99,26 @@ class ViewController: UIViewController {
 
 // MARK: - KRLAudioPlayerDelegate
 extension ViewController: KRLAudioPlayerDelegate {
-  func playing(_ player: KRLAudioPlayer, currentTime: TimeInterval, duration: TimeInterval) {
+  func audioPlayer(_ player: KRLAudioPlayer, currentTime: TimeInterval, duration: TimeInterval) {
+    if timeSliderViewIsTouchDown || seeking { return }
     DispatchQueue.main.async {
       self.playTimeLabel.text = String(format: "%02d:%02d", Int(currentTime) / 60, Int(currentTime) % 60)
       self.totalTimeLabel.text = String(format: "%02d:%02d", Int(duration) / 60, Int(duration) % 60)
-      self.playSliderView.value = Float(currentTime / duration)
+      self.timeSliderView.value = Float(currentTime / duration)
     }
   }
-  
-  func playFinish(_player: KRLAudioPlayer) {
-    
+
+  func audioPlayer(_ player: KRLAudioPlayer, loadProgress: Float) {
+    loadProgressView.setProgress(loadProgress, animated: true)
   }
   
-  func loadProgress(_player: KRLAudioPlayer, progress: Float) {
-    loadProgressView.setProgress(progress, animated: true)
+  func audioPlayer(_ player: KRLAudioPlayer, seekStatus: Bool) {
+    seeking = false
   }
+  
+  func playFinish(_ player: KRLAudioPlayer) {
+    play()
+  }
+  
 }
 
