@@ -74,6 +74,7 @@ class KRLAudioPlayer: NSObject {
 extension KRLAudioPlayer {
   func play(_ url: URL) {
     
+    let streamUrl = url.stream()
     /*
      如果当前的URL和之前的一样
      1: 判断当前是暂停就继续播放
@@ -82,7 +83,7 @@ extension KRLAudioPlayer {
      如果当前的URL和之前不一样
      1: 干掉之前的重新播放
      */
-    if self.url == url {
+    if self.url == streamUrl {
       switch status {
       case .playing:
         return
@@ -97,11 +98,15 @@ extension KRLAudioPlayer {
     // 移除老的kvo
     if let _ = self.player.currentItem {
       removeObserve()
-      playFinish()
+      if status == .playing || status == .pause {
+        playFinish()
+      }
     }
     
-    self.url = url
-    let asset = AVURLAsset(url: url)
+    self.url = streamUrl
+    let asset = AVURLAsset(url: streamUrl ?? url)
+    // 设置代理要在初始化item之前(在之后就会设置失败,原因未知)
+    asset.resourceLoader.setDelegate(self, queue: DispatchQueue.global())
     let item = AVPlayerItem(asset: asset)
     player.replaceCurrentItem(with: item)
     
@@ -149,17 +154,17 @@ extension KRLAudioPlayer {
     if keyPath == "status", let rawValue = change?[.newKey] as? Int, let value = AVPlayerItemStatus(rawValue: rawValue) {
       switch value {
       case .readyToPlay:
-        print("准备完毕")
+        KRLog("准备完毕")
         resume()
       case .failed:
-        print("失败")
+        KRLog("失败")
         status = .failed
       case .unknown:
-        print("unknow")
+        KRLog("unknow")
         status = .unknow
       }
     } else if keyPath == "playbackLikelyToKeepUp" {
-      print(change?[.newKey] ?? "")
+      KRLog(change?[.newKey] ?? "")
     } else if keyPath == "loadedTimeRanges" {
       loadProgress()
     }
@@ -182,14 +187,13 @@ extension KRLAudioPlayer {
 }
 
 extension KRLAudioPlayer {
-  
   @objc fileprivate func playFinish() {
-    guard let observer = playingObserver else {return }
+    guard let observer = playingObserver, status != .stop else {return }
     status = .stop
     player.removeTimeObserver(observer)
     playingObserver = nil
     delegate?.playFinish?(self)
-    print("播放完毕")
+    KRLog("播放完毕")
   }
   
   @objc fileprivate func loadProgress() {
@@ -210,6 +214,31 @@ extension KRLAudioPlayer {
   }
 }
 
+// MARK: - AVAssetResourceLoaderDelegate
+extension KRLAudioPlayer: AVAssetResourceLoaderDelegate {
+  func resourceLoader(_ resourceLoader: AVAssetResourceLoader, shouldWaitForLoadingOfRequestedResource loadingRequest: AVAssetResourceLoadingRequest) -> Bool {
+    
+    loadingRequest.contentInformationRequest?.contentLength = 3737800
+    loadingRequest.contentInformationRequest?.contentType = "public.mp3"
+    loadingRequest.contentInformationRequest?.isByteRangeAccessSupported = true
+    
+    let data = try! Data(contentsOf: URL(fileURLWithPath: "/Users/karl/Desktop/339744.mp3"), options: Data.ReadingOptions.mappedIfSafe)
+    let requestOffset = Data.Index(loadingRequest.dataRequest!.requestedOffset)
+    let requestLength = Data.Index(loadingRequest.dataRequest!.requestedLength)
+    let range = Range(uncheckedBounds: (requestOffset, requestLength))
+    let subData = data.subdata(in: range)
+    loadingRequest.dataRequest?.respond(with: subData)
+    loadingRequest.finishLoading()
+    KRLog(loadingRequest)
+    return true
+  }
+  
+  func resourceLoader(_ resourceLoader: AVAssetResourceLoader, didCancel loadingRequest: AVAssetResourceLoadingRequest) {
+    
+  }
+}
+
+// MARK: - Tools
 extension Float64 {
   var timeInterval: TimeInterval {
     return TimeInterval(self)
@@ -224,3 +253,19 @@ extension RangeComparable where Self: Comparable  {
 }
 
 extension Float: RangeComparable {}
+
+extension URL {
+  func stream() -> URL? {
+    var com = URLComponents(string: absoluteString)
+    com?.scheme = "stream"
+    return com?.url
+  }
+}
+
+private let logFormat = DateFormatter()
+public func KRLog<T>(_ items: T, fileName: String = #file, line: Int = #line, method: String = #function) {
+  #if DEBUG
+    logFormat.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
+    print("\(logFormat.string(from: Date())) <\((fileName as NSString).lastPathComponent)>[\(line)]-\(method): \(items)")
+  #endif
+}
